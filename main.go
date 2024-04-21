@@ -53,10 +53,12 @@ func (c *Config) Reload() error {
 
 	// Check if the environment variables are set and not empty strings
 	if c.Address == "" {
-		return fmt.Errorf("ADDRESS environment variable is not set")
+		// set a default address if the environment variable is not set
+		c.Address = "http://localhost"
 	}
 	if c.Port == "" {
-		return fmt.Errorf("PORT environment variable is not set")
+		// set a default port if the environment variable is not set
+		c.Port = "8081"
 	}
 	return nil
 }
@@ -107,10 +109,12 @@ func (d *DatabaseConfig) Reload() error {
 
 	// Check if the environment variables are set and not empty strings
 	if d.DBAddress == "" {
-		return fmt.Errorf("DB_ADDRESS environment variable is not set")
+		// set a default address if the environment variable is not set
+		d.DBAddress = "http://localhost"
 	}
 	if d.DBPort == "" {
-		return fmt.Errorf("DB_PORT environment variable is not set")
+		// set a default port if the environment variable is not set
+		d.DBPort = "37017"
 	}
 
 	return nil
@@ -149,6 +153,11 @@ func (m *MessageOfTheDay) Reload() error {
 	// Load the environment variables
 	m.MOTD = os.Getenv("MOTD")
 
+	if m.MOTD == "" {
+		// set a default message of the day if the environment variable is not set
+		m.MOTD = "Have a Nice Day!"
+	}
+
 	return nil
 }
 
@@ -173,4 +182,24 @@ func main() {
 	fmt.Printf("Web App Address: %s, Port: %s\n", config.Address, config.Port)
 	fmt.Printf("Database Address: %s, Port: %s\n", dbConfig.DBAddress, dbConfig.DBPort)
 	fmt.Printf("Message of the Day: %s\n", motdConfig.MOTD)
+
+	/*
+		Additional Notes
+		The Config struct can be used as a standalone configuration struct
+		The DatabaseConfig struct can be used as a standalone configuration struct
+		The MessageOfTheDay struct can be used as a standalone configuration struct
+		The DatabaseConfig and MessageOfTheDay structs can be combined to create a configuration with both database and message of the day functionality
+		You could use the final struct that implements the Configurer interface to use in the context of an application.
+
+		Example:
+
+		type Service struct {
+			Configurer
+			*http.Server
+		}
+
+		You could then just call Service.Reload() to reload the configuration for the service thus reloading all the decorators in the chain.
+
+	*/
+
 }
