@@ -1,85 +1,176 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
+
+/*
+
+This example demonstrates the Decorator pattern. This is a structural pattern
+used to add new behaviors to objects dynamically by placing them inside special
+wrapper objects containing these behaviors. This pattern creates a flexible design
+that is easy to extend without modifying existing code.
+
+In this example:
+- The 'Config' struct holds the base configuration for our application.
+- The 'DatabaseConfig' and 'MessageOfTheDay' structs act as decorators to the 'Config' struct,
+  adding database configuration and a message of the day functionality, respectively.
+- All configuration structs implement the 'Configurer' interface which includes a 'Reload' method
+  for reloading configuration from the environment variables.
+
+This allows the 'DatabaseConfig' and 'MessageOfTheDay' decorators to reuse and extend
+the 'Reload' method of the 'Config' struct dynamically, demonstrating the Decorator pattern's flexibility.
+
+*/
 
 // Configurer defines an interface that all concrete configs and decorators will implement
+// this interface will allow us to embed the Config struct in the DatabaseConfig struct as
+// it implements the Reload method and is a Configurer
 type Configurer interface {
-	GetHost() string
-	GetPort() int
+	Reload() error
 }
+
+/*
+#########################################################################
+# Base Config Section
+#########################################################################
+*/
 
 // Config is the base configuration struct for our application
 type Config struct {
-	address string
-	port    int
+	Address string
+	Port    string
 }
 
-// GetHost returns the host address
-func (c *Config) GetHost() string {
-	return c.address
+// Reload reloads the configuration from the environment variables and implements the Configurer interface
+func (c *Config) Reload() error {
+	fmt.Println("Reloading base config")
+
+	// Load the environment variables
+	c.Address = os.Getenv("ADDRESS")
+	c.Port = os.Getenv("PORT")
+
+	// Check if the environment variables are set and not empty strings
+	if c.Address == "" {
+		return fmt.Errorf("ADDRESS environment variable is not set")
+	}
+	if c.Port == "" {
+		return fmt.Errorf("PORT environment variable is not set")
+	}
+	return nil
 }
 
-// GetPort returns the port number
-func (c *Config) GetPort() int {
-	return c.port
-}
-
-// NewConfig creates a new Config instance
-func NewConfig(address string, port int) *Config {
+// NewConfig creates a new Config struct
+func NewConfig(address string, port string) *Config {
 	return &Config{
-		address: address,
-		port:    port,
+		Address: address,
+		Port:    port,
 	}
 }
 
-// DatabaseConfig is a decorator that adds database configuration to the base Config struct
+/*
+#########################################################################
+# Database Config Section - Decorator for the Config struct
+#########################################################################
+*/
+
+// DatabaseConfig is a decorator for the Config struct
 type DatabaseConfig struct {
-	config    Configurer
-	dbAddress string
-	dbPort    int
+	Configurer
+	DBAddress string
+	DBPort    string
 }
 
-// GetHost returns the host address
-func (d *DatabaseConfig) GetHost() string {
-	return d.config.GetHost()
-}
-
-// GetPort returns the port number
-func (d *DatabaseConfig) GetPort() int {
-	return d.config.GetPort()
-}
-
-// GetDBAddress returns the database address
-func (d *DatabaseConfig) GetDBAddress() string {
-	return d.dbAddress
-}
-
-// GetDBPort returns the port number the database is listening on
-func (d *DatabaseConfig) GetDBPort() int {
-	return d.dbPort
-}
-
-// NewDatabaseConfig creates a new DatabaseConfig instance
-func NewDatabaseConfig(config Configurer, dbAddress string, dbPort int) *DatabaseConfig {
+// NewDatabaseConfig creates a new DatabaseConfig struct dependecy inject the Configurer interface
+// this will allow us to reload the base configuration when the DatabaseConfig is reloaded
+func NewDatabaseConfig(config Configurer, dbAddress string, dbPort string) *DatabaseConfig {
 	return &DatabaseConfig{
-		config:    config,
-		dbAddress: dbAddress,
-		dbPort:    dbPort,
+		Configurer: config,
+		DBAddress:  dbAddress,
+		DBPort:     dbPort,
 	}
+}
+
+// Reload reloads the configuration from the environment variables and implements the Configurer interface
+func (d *DatabaseConfig) Reload() error {
+	fmt.Println("Reloading database config")
+
+	// Reload the base configuration
+	if err := d.Configurer.Reload(); err != nil {
+		return err
+	}
+
+	// Load the environment variables
+	d.DBAddress = os.Getenv("DB_ADDRESS")
+	d.DBPort = os.Getenv("DB_PORT")
+
+	// Check if the environment variables are set and not empty strings
+	if d.DBAddress == "" {
+		return fmt.Errorf("DB_ADDRESS environment variable is not set")
+	}
+	if d.DBPort == "" {
+		return fmt.Errorf("DB_PORT environment variable is not set")
+	}
+
+	return nil
+}
+
+/*
+#########################################################################
+# Message of the Day Config Section - Decorator for the Config struct
+#########################################################################
+*/
+
+// MessageOfTheDay is a decorator for the Config struct and adds a message of the day
+// functionality to the configuration
+type MessageOfTheDay struct {
+	Configurer
+	MOTD string
+}
+
+// NewMessageOfTheDay creates a new MessageOfTheDay struct that decorates the Config struct
+func NewMessageOfTheDay(config Configurer, motd string) *MessageOfTheDay {
+	return &MessageOfTheDay{
+		Configurer: config,
+		MOTD:       motd,
+	}
+}
+
+// Reload reloads the configuration from the environment variables and implements the Configurer interface
+func (m *MessageOfTheDay) Reload() error {
+	fmt.Println("Reloading message of the day")
+
+	// Reload the base configuration
+	if err := m.Configurer.Reload(); err != nil {
+		return err
+	}
+
+	// Load the environment variables
+	m.MOTD = os.Getenv("MOTD")
+
+	return nil
 }
 
 func main() {
-	// Create a new Config instance
-	config := NewConfig("http://webapp", 8080)
+	// Create a new Config and DatabaseConfig note the current values before reloading
+	config := NewConfig("http://webapp", "8080")
+	dbConfig := NewDatabaseConfig(config, "http://mongodb", "27017")
+	motdConfig := NewMessageOfTheDay(dbConfig, "Hello, World!")
 
-	// Create a new DatabaseConfig instance that decorates the Config instance with database configuration
-	dbConfig := NewDatabaseConfig(config, "http://mongdb", 27017)
+	// Print the current values
+	fmt.Printf("Config Address: %s, Port: %s\n", config.Address, config.Port)
+	fmt.Printf("Database Address: %s, Port: %s\n", dbConfig.DBAddress, dbConfig.DBPort)
+	fmt.Printf("Message of the Day: %s\n", motdConfig.MOTD)
 
-	// Print the host and port
-	fmt.Println("Host:", dbConfig.config.GetHost())
-	fmt.Println("Port:", dbConfig.config.GetPort())
+	// Reload the last decorator in the chain which will reload all the decorators
+	if err := motdConfig.Reload(); err != nil {
+		fmt.Printf("Error reloading configuration: %v\n", err)
+		return
+	}
 
-	// Print the database address and port
-	fmt.Println("DB Host:", dbConfig.GetDBAddress())
-	fmt.Println("DB Port:", dbConfig.GetDBPort())
+	// Print the new values reloaded from the environment variables
+	fmt.Printf("Web App Address: %s, Port: %s\n", config.Address, config.Port)
+	fmt.Printf("Database Address: %s, Port: %s\n", dbConfig.DBAddress, dbConfig.DBPort)
+	fmt.Printf("Message of the Day: %s\n", motdConfig.MOTD)
 }
