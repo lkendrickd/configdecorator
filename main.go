@@ -5,29 +5,6 @@ import (
 	"os"
 )
 
-/*
-
-This example demonstrates the Decorator pattern. This is a structural pattern
-used to add new behaviors to objects dynamically by placing them inside special
-wrapper objects containing these behaviors. This pattern creates a flexible design
-that is easy to extend without modifying existing code.
-
-In this example:
-- The 'Config' struct holds the base configuration for our application.
-- The 'DatabaseConfig' and 'MessageOfTheDay' structs act as decorators to the 'Config' struct,
-  adding database configuration and a message of the day functionality, respectively.
-- All configuration structs implement the 'Configurer' interface which includes a 'Reload' method
-  for reloading configuration from the environment variables.
-
-This allows the 'DatabaseConfig' and 'MessageOfTheDay' decorators to reuse and extend
-the 'Reload' method of the 'Config' struct dynamically, demonstrating the Decorator pattern's flexibility.
-
-
-**TLDR:** The Decorator pattern allows you to add new behaviors to objects dynamically by embedding
-them inside other types or structs. By defining a common interface for all decorators, you can
-easily extend the functionality of an object without modifying its core implementation.
-*/
-
 // Configurer defines an interface that all concrete configs and decorators will implement
 // this interface will allow us to embed decorators in other decorators and reload the configuration
 type Configurer interface {
@@ -177,7 +154,8 @@ func main() {
 	fmt.Printf("Database Address: %s, Port: %s\n", dbConfig.DBAddress, dbConfig.DBPort)
 	fmt.Printf("Message of the Day: %s\n", motdConfig.MOTD)
 
-	// Reload the last decorator in the chain which will reload all the decorators
+	// Reload the last decorator in the chain which will reload
+	// all the decorators.
 	if err := motdConfig.Reload(); err != nil {
 		fmt.Printf("Error reloading configuration: %v\n", err)
 		return
