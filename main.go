@@ -22,11 +22,14 @@ In this example:
 This allows the 'DatabaseConfig' and 'MessageOfTheDay' decorators to reuse and extend
 the 'Reload' method of the 'Config' struct dynamically, demonstrating the Decorator pattern's flexibility.
 
+
+**TLDR:** The Decorator pattern allows you to add new behaviors to objects dynamically by embedding
+them inside other types or structs. By defining a common interface for all decorators, you can
+easily extend the functionality of an object without modifying its core implementation.
 */
 
 // Configurer defines an interface that all concrete configs and decorators will implement
-// this interface will allow us to embed the Config struct in the DatabaseConfig struct as
-// it implements the Reload method and is a Configurer
+// this interface will allow us to embed decorators in other decorators and reload the configuration
 type Configurer interface {
 	Reload() error
 }
@@ -160,6 +163,8 @@ func (m *MessageOfTheDay) Reload() error {
 
 	return nil
 }
+
+// main function which is where the application will begin execution
 
 func main() {
 	// Create a new Config and DatabaseConfig note the current values before reloading
