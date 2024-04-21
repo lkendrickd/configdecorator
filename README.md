@@ -30,3 +30,17 @@ To run this example, simply execute the following command:
 ```bash
 go run main.go
 ```
+
+### Output
+```bash
+go run main.go 
+Config Address: http://webapp, Port: 8080
+Database Address: http://mongodb, Port: 27017
+Message of the Day: Hello, World!
+Reloading message of the day
+Reloading database config
+Reloading base config
+Web App Address: http://localhost, Port: 8081
+Database Address: http://localhost, Port: 37017
+Message of the Day: Have a Nice Day!
+```

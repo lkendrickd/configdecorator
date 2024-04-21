@@ -182,7 +182,6 @@ func main() {
 		}
 
 		You could then just call Service.Reload() to reload the configuration for the service thus reloading all the decorators in the chain.
-
 	*/
 
 }
